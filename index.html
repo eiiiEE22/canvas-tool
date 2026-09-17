@@ -796,6 +796,51 @@
         user-select: none !important;
         -webkit-user-select: none !important;
     }
+
+    /* ★ 新增：按住 Alt 时图层紧凑模式（显示更多图层） */
+    .layer-list.compact .layer-item {
+        padding: 3px 5px 3px 3px;
+        margin-bottom: 1px;
+        gap: 2px;
+        border-radius: 6px;
+    }
+    .layer-list.compact .layer-item .layer-thumb {
+        width: 22px; height: 22px;
+        border-radius: 4px;
+    }
+    .layer-list.compact .layer-item .layer-top {
+        gap: 5px;
+    }
+    .layer-list.compact .layer-item .layer-name {
+        font-size: 10.5px;
+    }
+    .layer-list.compact .layer-item .layer-btn {
+        width: 18px; height: 18px;
+    }
+    .layer-list.compact .layer-item .layer-btn svg {
+        width: 11px; height: 11px;
+    }
+    .layer-list.compact .layer-item .layer-ctrl {
+        padding-left: 28px;
+        gap: 3px;
+    }
+    .layer-list.compact .layer-item .layer-blend {
+        width: 56px; height: 16px;
+        font-size: 9.5px;
+        padding: 0 14px 0 4px;
+        line-height: 14px;
+    }
+    .layer-list.compact .layer-item .layer-opacity {
+        height: 12px;
+    }
+    .layer-list.compact .layer-item .layer-opacity::-webkit-slider-thumb {
+        width: 10px; height: 10px;
+        margin-top: -3.5px;
+    }
+    .layer-list.compact .layer-item .layer-opacity-val {
+        flex: 0 0 28px;
+        font-size: 9px;
+    }
 </style>
 </head>
 <body>
@@ -1279,6 +1324,9 @@
 
     let spacePressed = false;
 
+    // ★ Shift 范围选择的锚点
+    let lastClickedLayerIndex = -1;
+
     let isMarqueeSelecting = false;
     let marqueeStart = null;
     let marqueeCurrent = null;
@@ -1295,6 +1343,9 @@
 
     let autoSaveTimer = null;
     let autoSavePaused = false;
+
+    // ★ Alt 紧凑模式
+    let altCompactActive = false;
 
     // ========== 工具函数 ==========
     let toastTimer = null;
@@ -1570,6 +1621,7 @@
         activeLayerIndex = layers.length - 1;
         selectedIndices.clear();
         selectedIndices.add(activeLayerIndex);
+        lastClickedLayerIndex = activeLayerIndex;
         if (!opts.silent) { renderAll(); renderOverlay(); renderLayerPanel(); }
         if (!opts.skipHistory) saveState();
         return layer;
@@ -1591,11 +1643,14 @@
         if (layers.length === 0) {
             activeLayerIndex = -1;
             selectedIndices.clear();
+            lastClickedLayerIndex = -1;
         } else {
             if (activeLayerIndex >= layers.length) activeLayerIndex = layers.length - 1;
             if (activeLayerIndex > index) activeLayerIndex--;
             if (activeLayerIndex < 0) activeLayerIndex = 0;
             if (selectedIndices.size === 0) selectedIndices.add(activeLayerIndex);
+            if (lastClickedLayerIndex > index) lastClickedLayerIndex--;
+            if (lastClickedLayerIndex >= layers.length) lastClickedLayerIndex = layers.length - 1;
         }
 
         if (hueEditingLayerIndex === index) closeHuePanel();
@@ -1679,12 +1734,14 @@
         selectedIndices.forEach(i => { if (i >= 0 && i < n) oldSelLayers.push(oldLayers[i]); });
         const oldHue = (hueEditingLayerIndex >= 0 && hueEditingLayerIndex < n) ? oldLayers[hueEditingLayerIndex] : null;
         const oldCtx = (contextMenuLayerIndex >= 0 && contextMenuLayerIndex < n) ? oldLayers[contextMenuLayerIndex] : null;
+        const oldAnchor = (lastClickedLayerIndex >= 0 && lastClickedLayerIndex < n) ? oldLayers[lastClickedLayerIndex] : null;
 
         layers = rest;
         activeLayerIndex = oldActive ? layers.indexOf(oldActive) : -1;
         selectedIndices = new Set(oldSelLayers.map(l => layers.indexOf(l)).filter(i => i >= 0));
         hueEditingLayerIndex = oldHue ? layers.indexOf(oldHue) : -1;
         contextMenuLayerIndex = oldCtx ? layers.indexOf(oldCtx) : -1;
+        lastClickedLayerIndex = oldAnchor ? layers.indexOf(oldAnchor) : -1;
 
         renderAll(); renderOverlay(); renderLayerPanel(); saveState();
         showToast('图层顺序已调整');
@@ -1753,6 +1810,7 @@
         selectedIndices = new Set();
         for (let k = 0; k < newLayers.length; k++) selectedIndices.add(startIdx + k);
         activeLayerIndex = layers.length - 1;
+        lastClickedLayerIndex = activeLayerIndex;
         renderAll(); renderOverlay(); renderLayerPanel(); saveState();
         showToast(`已复制 ${newLayers.length} 个图层`);
     }
@@ -1798,6 +1856,7 @@
         selectedIndices = new Set();
         for (let k = 0; k < newLayers.length; k++) selectedIndices.add(startIdx + k);
         activeLayerIndex = layers.length - 1;
+        lastClickedLayerIndex = activeLayerIndex;
         renderAll(); renderOverlay(); renderLayerPanel(); saveState();
         showToast(`已粘贴 ${newLayers.length} 个图层`);
         return true;
@@ -1850,7 +1909,7 @@
         newImg.src = outUrl;
     }
 
-    // ========== 对齐 / 分布 / 网格（重写 + 新增） ==========
+    // ========== 对齐 / 分布 / 网格 ==========
     function alignLayers(mode) {
         const indices = getSelectedLayerIndices();
         if (indices.length === 0) { showToast('请先选择图层'); return; }
@@ -1941,7 +2000,6 @@
         showToast(axis === 'h' ? '已水平分布' : '已垂直分布');
     }
 
-    // ★ 新增：田字格网格分布（自动铺满画布）
     function gridLayoutLayers() {
         const indices = getSelectedLayerIndices();
         if (indices.length < 2) { showToast('网格排列需要至少 2 个图层'); return; }
@@ -1955,7 +2013,6 @@
         const cellW = canvasWidth / cols;
         const cellH = canvasHeight / rows;
 
-        // 按当前位置从左上到右下排序，使排列顺序符合视觉直觉
         const ordered = indices.slice().sort((a, b) => {
             const ba = getLayerAABB(layers[a]);
             const bb = getLayerAABB(layers[b]);
@@ -1979,7 +2036,6 @@
             const h0 = getLayerH(l);
             if (w0 <= 0 || h0 <= 0) return;
 
-            // 等比缩放使其刚好铺满单元格
             const s = Math.min(cellW / w0, cellH / h0);
             if (isFinite(s) && s > 0) {
                 l.scaleX *= s;
@@ -1989,7 +2045,6 @@
             const w1 = getLayerW(l);
             const h1 = getLayerH(l);
 
-            // 图层中心放到单元格中心（对旋转图层同样友好）
             const cx = cellX + cellW / 2;
             const cy = cellY + cellH / 2;
             l.x = cx - w1 / 2;
@@ -2717,9 +2772,36 @@
 
             item.appendChild(ctrlRow);
 
+            // ★ Shift 范围选择 + Ctrl 切换 + 普通单选
             item.addEventListener('click', (e) => {
                 if (Date.now() - layerMarqueeJustFinished < 200) return;
-                selectLayer(i, e.shiftKey);
+
+                const isRangeClick = e.shiftKey && !e.ctrlKey && !e.metaKey;
+                const isToggleClick = (e.ctrlKey || e.metaKey) && !e.shiftKey;
+
+                if (isRangeClick
+                    && lastClickedLayerIndex >= 0
+                    && lastClickedLayerIndex < layers.length
+                    && lastClickedLayerIndex !== i) {
+                    if (transformMode) exitTransformMode(true);
+                    const start = Math.min(lastClickedLayerIndex, i);
+                    const end = Math.max(lastClickedLayerIndex, i);
+                    selectedIndices.clear();
+                    for (let k = start; k <= end; k++) selectedIndices.add(k);
+                    activeLayerIndex = i;
+                    renderAll(); renderOverlay(); renderLayerPanel();
+                    const count = end - start + 1;
+                    if (count > 1) showToast(`已选中 ${count} 个连续图层`);
+                    // 锚点保持不变，方便连续扩选
+                    return;
+                }
+
+                if (isToggleClick) {
+                    selectLayer(i, true);
+                } else {
+                    selectLayer(i, false);
+                }
+                lastClickedLayerIndex = i;
             });
 
             item.addEventListener('dragstart', (e) => {
@@ -2908,6 +2990,7 @@
             layers = [];
             activeLayerIndex = -1;
             selectedIndices.clear();
+            lastClickedLayerIndex = -1;
             isUndoing = false;
             renderAll(); renderOverlay(); renderLayerPanel();
             if (_restoreDoneCallback) {
@@ -2962,6 +3045,7 @@
         if (activeLayerIndex < 0 && layers.length > 0) activeLayerIndex = 0;
         selectedIndices.clear();
         if (activeLayerIndex >= 0) selectedIndices.add(activeLayerIndex);
+        lastClickedLayerIndex = activeLayerIndex;
         isUndoing = false;
         renderAll(); renderOverlay(); renderLayerPanel();
         if (_restoreDoneCallback) {
@@ -3582,6 +3666,7 @@
             if (!additive && selectedIndices.size > 0) {
                 selectedIndices.clear();
                 activeLayerIndex = -1;
+                lastClickedLayerIndex = -1;
                 renderAll(); renderOverlay(); renderLayerPanel();
             } else {
                 renderOverlay();
@@ -3599,6 +3684,7 @@
             for (const i of hits) selectedIndices.add(i);
             activeLayerIndex = hits.length > 0 ? hits[hits.length - 1] : -1;
         }
+        if (hits.length > 0) lastClickedLayerIndex = activeLayerIndex;
 
         renderAll(); renderOverlay(); renderLayerPanel();
 
@@ -3662,6 +3748,7 @@
             if (!startedOnItem && !additive && selectedIndices.size > 0) {
                 selectedIndices.clear();
                 activeLayerIndex = -1;
+                lastClickedLayerIndex = -1;
                 renderAll(); renderOverlay(); renderLayerPanel();
             }
             return;
@@ -3692,6 +3779,7 @@
             for (const i of hits) selectedIndices.add(i);
             activeLayerIndex = hits.length > 0 ? hits[hits.length - 1] : -1;
         }
+        if (hits.length > 0) lastClickedLayerIndex = activeLayerIndex;
 
         renderAll(); renderOverlay(); renderLayerPanel();
 
@@ -3705,7 +3793,8 @@
         if (e.target.closest('.layer-btn, .layer-ctrl, input, select, textarea')) return;
 
         const itemEl = e.target.closest('.layer-item');
-        const modifier = e.ctrlKey || e.metaKey || e.altKey;
+        // ★ Alt 不再用于强制框选（Alt 改为缩放视图）
+        const modifier = e.ctrlKey || e.metaKey;
         if (itemEl && !modifier) return;
 
         e.preventDefault();
@@ -3785,8 +3874,10 @@
                     activeLayerIndex = hitIndex;
                     renderAll(); renderOverlay(); renderLayerPanel();
                 }
+                lastClickedLayerIndex = hitIndex;
             } else {
                 selectLayer(hitIndex, true);
+                lastClickedLayerIndex = hitIndex;
             }
 
             dragMembers = Array.from(selectedIndices).map(idx => ({
@@ -3873,6 +3964,7 @@
                 activeLayerIndex = hitIndex;
                 selectedIndices.clear();
                 selectedIndices.add(hitIndex);
+                lastClickedLayerIndex = hitIndex;
             } else {
                 activeLayerIndex = hitIndex;
             }
@@ -3894,6 +3986,7 @@
                 activeLayerIndex = hit;
                 selectedIndices.clear();
                 selectedIndices.add(hit);
+                lastClickedLayerIndex = hit;
                 renderAll(); renderOverlay(); renderLayerPanel();
             }
             e.preventDefault();
@@ -4381,6 +4474,11 @@
         spacePressed = false;
         canvasWrapper.classList.remove('space-pan');
         setHintDimmed(false);
+        // ★ 窗口失焦时恢复紧凑模式
+        if (altCompactActive) {
+            altCompactActive = false;
+            layerList.classList.remove('compact');
+        }
     });
 
     canvasWrapper.addEventListener('wheel', function(e) {
@@ -4995,12 +5093,14 @@
         { keys: ['变换模式', 'Ctrl'], desc: '自由拉伸（不保持等比）' },
         { keys: ['画布空白拖拽'], desc: '框选多个图层' },
         { keys: ['Shift', '画布框选'], desc: '画布框选加选' },
+        { keys: ['Shift', '图层点击'], desc: '范围选择（锚点到当前之间全部）' },
+        { keys: ['Ctrl / Cmd', '图层点击'], desc: '切换单个图层选中状态' },
+        { keys: ['按住 Alt'], desc: '图层缩略图变小，显示更多图层' },
         { keys: ['图层面板空白拖拽'], desc: '在图层面板框选' },
-        { keys: ['Ctrl / Alt', '图层项拖拽'], desc: '从图层项上强制框选' },
+        { keys: ['Ctrl / Cmd', '图层项拖拽'], desc: '从图层项上强制框选' },
         { keys: ['Shift', '图层面板框选'], desc: '图层面板框选加选' },
         { keys: ['对齐面板', '网格按钮'], desc: '多选图层排列成田字格（自动铺满画布）' },
         { keys: ['右键图层'], desc: '打开操作菜单' },
-        { keys: ['Shift', '点击图层'], desc: '多选 / 取消多选' },
         { keys: ['?'], desc: '显示本帮助' }
     ];
 
@@ -5193,6 +5293,12 @@
 
         if (isInputFocused) return;
 
+        // ★ 按住 Alt → 图层紧凑模式
+        if (e.key === 'Alt' && !altCompactActive) {
+            altCompactActive = true;
+            layerList.classList.add('compact');
+        }
+
         if (e.key === '?' || (e.shiftKey && e.key === '/')) {
             e.preventDefault();
             openShortcutsPanel();
@@ -5244,7 +5350,10 @@
             for (let i = 0; i < layers.length; i++) {
                 if (layers[i].visible && layers[i].img) selectedIndices.add(i);
             }
-            if (selectedIndices.size > 0) activeLayerIndex = Array.from(selectedIndices)[selectedIndices.size - 1];
+            if (selectedIndices.size > 0) {
+                activeLayerIndex = Array.from(selectedIndices)[selectedIndices.size - 1];
+                lastClickedLayerIndex = activeLayerIndex;
+            }
             renderAll(); renderOverlay(); renderLayerPanel();
             showShortcutHint('已全选图层 · <kbd>Shift</kbd> 点击可取消选择');
             return;
@@ -5335,6 +5444,11 @@
                 stopPanning();
                 hideShortcutHint();
             }
+        }
+        // ★ 松开 Alt → 退出紧凑模式
+        if (e.key === 'Alt' && altCompactActive) {
+            altCompactActive = false;
+            layerList.classList.remove('compact');
         }
     });
 
@@ -5546,7 +5660,7 @@
             });
         }
 
-        showToast('画布/图层均可框选 · Shift 加选 · 中键平移');
+        showToast('Shift 范围选择 · 按住 Alt 缩小图层缩略图');
     }
     init();
 })();
