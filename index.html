@@ -168,16 +168,7 @@
     }
     #zoomLabel:focus{ border-color:var(--accent); }
 
-    .hint{
-        margin-left:auto; color:var(--text-3); font-size:11px;
-        display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-    }
-    .hint kbd{
-        display:inline-block; padding:1px 5px;
-        border:1px solid var(--border); border-bottom-width:2px;
-        border-radius:4px; background:var(--kbd-bg); color:var(--kbd-text);
-        font-size:10px; font-family:inherit; line-height:1.4;
-    }
+    /* 已移除右上角 .hint 样式，不再使用 */
 
     input[type="range"]{
         -webkit-appearance:none; appearance:none;
@@ -260,6 +251,7 @@
         z-index:5;
     }
 
+    /* 鼠标操作提示：操作时若隐若现 */
     .mouse-hint{
         position: absolute;
         bottom: 14px;
@@ -278,6 +270,10 @@
         gap: 10px;
         flex-wrap: wrap;
         max-width: 90%;
+        transition: opacity 0.35s ease;
+    }
+    .mouse-hint.dimmed {
+        opacity: 0.14;
     }
     .mouse-hint span{
         display: inline-flex; align-items: center; gap: 3px;
@@ -290,7 +286,7 @@
         font-size: 9.5px; font-family: inherit; line-height: 1.3;
     }
 
-    /* ★ 提示条：常驻显示，操作时淡出为「若隐若现」 */
+    /* 键盘快捷键提示条：常驻显示，不淡出 */
     .shortcut-hint {
         position: absolute;
         bottom: 52px;
@@ -305,8 +301,6 @@
         box-shadow: var(--shadow-sm);
         z-index: 5;
         opacity: 1;
-        transform: translateY(0);
-        transition: opacity 0.35s ease;
         display: flex;
         align-items: center;
         gap: 6px;
@@ -314,9 +308,6 @@
         max-width: 90%;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    .shortcut-hint.dimmed {
-        opacity: 0.14;
     }
     .shortcut-hint kbd {
         display: inline-block; padding: 1px 5px;
@@ -862,9 +853,7 @@
             <span>背景</span>
             <input type="color" id="bgColorInput" value="#ffffff" />
         </label>
-        <div class="hint">
-            <kbd>?</kbd> 快捷键 · <kbd>Shift</kbd> 多选 · <kbd>方向键</kbd> 微调 · <kbd>中键</kbd> 平移
-        </div>
+        <!-- 右上角快捷键提示已移除 -->
         <input type="file" id="fileInput" accept="image/*" style="display:none;" />
         <input type="file" id="projectFileInput" accept="application/json,.json" style="display:none;" />
     </header>
@@ -884,7 +873,7 @@
                 <span><kbd>左键</kbd>选择/移动</span>
                 <span><kbd>右键</kbd>菜单</span>
                 <span><kbd>中键</kbd>平移画布</span>
-                <span><kbd>滚轮</kbd>缩放图层</span>
+                <span><kbd>滚轮</kbd>缩放视图</span>
                 <span><kbd>双击</kbd>自由变换</span>
             </div>
             <div class="shortcut-hint" id="shortcutHint">双击图层进入自由变换 · 右键菜单 · 方向键微调</div>
@@ -1072,6 +1061,7 @@
     const canvasStage = document.getElementById('canvasStage');
     const viewZoomBadge = document.getElementById('viewZoomBadge');
     const shortcutHint = document.getElementById('shortcutHint');
+    const mouseHint = document.getElementById('mouseHint');
     const widthInput = document.getElementById('canvasWidth');
     const heightInput = document.getElementById('canvasHeight');
     const linkAspectBtn = document.getElementById('linkAspectBtn');
@@ -1229,7 +1219,7 @@
     let dragStartX = 0, dragStartY = 0;
     let dragLayerStartX = 0, dragLayerStartY = 0;
     let dragMembers = [];
-    let dragSnapTargets = null;   // ★ 拖拽期间缓存吸附目标
+    let dragSnapTargets = null;
 
     let snapLines = [];
 
@@ -1283,28 +1273,28 @@
         toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
-    // ★ 常驻提示条：待机时清晰可见，操作时若隐若现
+    // ★ 键盘快捷键提示条：常驻显示，操作时也保持完全可见
     const DEFAULT_HINT = '双击图层进入自由变换 · 右键菜单 · 方向键微调';
     let lastHintText = DEFAULT_HINT;
-    let hintDimmed = false;
+    shortcutHint.innerHTML = DEFAULT_HINT;
 
     function showShortcutHint(text) {
         if (lastHintText !== text) {
             lastHintText = text;
             shortcutHint.innerHTML = text;
         }
-        shortcutHint.style.opacity = '';   // 交回 CSS 控制（dimmed 类）
     }
     function hideShortcutHint() {
         showShortcutHint(DEFAULT_HINT);
     }
+
+    // ★ 鼠标操作提示：操作画布时若隐若现
     function setHintDimmed(on) {
-        if (hintDimmed === on) return;
-        hintDimmed = on;
-        shortcutHint.classList.toggle('dimmed', on);
+        if (!mouseHint) return;
+        mouseHint.classList.toggle('dimmed', on);
     }
 
-    // ★ 画布坐标换算缓存（避免每次 mousemove 触发 getBoundingClientRect 回流）
+    // ★ 画布坐标换算缓存
     let canvasRectCache = null;
     function invalidateCanvasRectCache() { canvasRectCache = null; }
     function getCanvasRectCached() {
@@ -1450,7 +1440,6 @@
         return arr;
     }
 
-    // ★ 计算单个图层旋转后的轴对齐包围盒
     function getLayerAABB(l) {
         const w = getLayerW(l);
         const h = getLayerH(l);
@@ -1491,9 +1480,6 @@
         return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     }
 
-    /* 统一的「变换坐标系」
-       - 单选图层时：返回该图层「未旋转」的本地矩形
-       - 多选时：返回多选整体 AABB，rot=0 */
     function getTransformFrame() {
         const indices = getSelectedLayerIndices();
         if (indices.length === 0) return null;
@@ -1508,7 +1494,6 @@
         return { x: b.x, y: b.y, w: b.w, h: b.h, rot: 0 };
     }
 
-    // 把画布坐标 → 未旋转的变换坐标系
     function toFrameCoords(frame, mx, my) {
         if (!frame || !frame.rot) return { x: mx, y: my };
         const cx = frame.x + frame.w / 2, cy = frame.y + frame.h / 2;
@@ -1589,7 +1574,6 @@
         if (contextMenuLayerIndex === index) { hideContextMenu(); contextMenuLayerIndex = -1; }
         else if (contextMenuLayerIndex > index) contextMenuLayerIndex--;
 
-        // 删除属于结构性改动，立刻落盘
         if (!silent) { renderAll(); renderOverlay(); renderLayerPanel(); saveState(true); }
     }
 
@@ -1968,7 +1952,6 @@
         updateStatus();
     }
 
-    // 渲染叠加层（虚线框、缩放手柄、旋转手柄）
     function renderOverlay() {
         while (transformSvg.firstChild) transformSvg.removeChild(transformSvg.firstChild);
         drawSvgSnapLines();
@@ -2240,7 +2223,7 @@
         syncScaleUI(active, selCount);
     }
 
-    // ========== 吸附（支持缓存目标，避免每帧遍历所有图层） ==========
+    // ========== 吸附 ==========
     function buildSnapTargets(excludeIndices) {
         const exclude = excludeIndices instanceof Set ? excludeIndices : new Set();
         const xTargets = [0, canvasWidth / 2, canvasWidth];
@@ -2749,7 +2732,6 @@
         });
     }
 
-    // immediate=true 时跳过防抖，立刻写入 IndexedDB
     function saveState(immediate) {
         if (isUndoing) return;
         const state = {
@@ -2879,7 +2861,7 @@
         }
     }
 
-    // ========== 自动保存（IndexedDB） ==========
+    // ========== 自动保存 ==========
     const DB_NAME = 'canvas-tool-db';
     const DB_STORE = 'projects';
     const AUTOSAVE_KEY = 'autosave';
@@ -3077,78 +3059,91 @@
         }
     }
 
-    // ========== 自动白平衡 ==========
+    // ========== 自动白平衡（修复版） ==========
     function computeWhiteBalanceImage(srcImg) {
         return new Promise((resolve) => {
-            const w = srcImg.naturalWidth || srcImg.width;
-            const h = srcImg.naturalHeight || srcImg.height;
-            if (!w || !h) { resolve(null); return; }
-
-            let c, cx, imgData;
             try {
-                c = document.createElement('canvas');
-                c.width = w; c.height = h;
-                cx = c.getContext('2d', { willReadFrequently: true });
-                cx.drawImage(srcImg, 0, 0, w, h);
-                imgData = cx.getImageData(0, 0, w, h);
-            } catch (err) { resolve(null); return; }
+                const w = srcImg.naturalWidth || srcImg.width;
+                const h = srcImg.naturalHeight || srcImg.height;
+                if (!w || !h) { resolve(null); return; }
 
-            const d = imgData.data;
-            const total = w * h;
-            const step = Math.max(1, Math.floor(Math.sqrt(total / 25000)));
-
-            let rSum = 0, gSum = 0, bSum = 0, n = 0;
-            for (let y = 0; y < h; y += step) {
-                const rowBase = y * w;
-                for (let x = 0; x < w; x += step) {
-                    const i = (rowBase + x) * 4;
-                    if (d[i + 3] < 8) continue;
-                    rSum += d[i]; gSum += d[i + 1]; bSum += d[i + 2];
-                    n++;
+                const MAX_DIM = 3200;
+                let cw = w, ch = h;
+                if (Math.max(w, h) > MAX_DIM) {
+                    const k = MAX_DIM / Math.max(w, h);
+                    cw = Math.max(1, Math.round(w * k));
+                    ch = Math.max(1, Math.round(h * k));
                 }
+
+                const c = document.createElement('canvas');
+                c.width = cw;
+                c.height = ch;
+                const cx = c.getContext('2d', { willReadFrequently: true });
+                if (!cx) { resolve(null); return; }
+                cx.drawImage(srcImg, 0, 0, cw, ch);
+
+                let imgData;
+                try {
+                    imgData = cx.getImageData(0, 0, cw, ch);
+                } catch (err) {
+                    console.warn('[WB] getImageData failed', err);
+                    resolve(null); return;
+                }
+
+                const d = imgData.data;
+                const total = cw * ch;
+                const step = Math.max(1, Math.floor(Math.sqrt(total / 25000)));
+
+                let rSum = 0, gSum = 0, bSum = 0, n = 0;
+                for (let y = 0; y < ch; y += step) {
+                    const rowBase = y * cw;
+                    for (let x = 0; x < cw; x += step) {
+                        const i = (rowBase + x) * 4;
+                        if (d[i + 3] < 8) continue;
+                        rSum += d[i]; gSum += d[i + 1]; bSum += d[i + 2];
+                        n++;
+                    }
+                }
+                if (!n) { resolve(null); return; }
+
+                const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
+                const gray = (rAvg + gAvg + bAvg) / 3;
+                if (gray < 2 || gray > 253) { resolve(null); return; }
+
+                const MAX_G = 1.75, MIN_G = 0.58;
+                let rG = gray / Math.max(rAvg, 1);
+                let gG = gray / Math.max(gAvg, 1);
+                let bG = gray / Math.max(bAvg, 1);
+                rG = Math.min(Math.max(rG, MIN_G), MAX_G);
+                gG = Math.min(Math.max(gG, MIN_G), MAX_G);
+                bG = Math.min(Math.max(bG, MIN_G), MAX_G);
+
+                const avgG = (rG + gG + bG) / 3;
+                if (avgG > 0.0001) { rG /= avgG; gG /= avgG; bG /= avgG; }
+
+                const lutR = new Uint8ClampedArray(256);
+                const lutG = new Uint8ClampedArray(256);
+                const lutB = new Uint8ClampedArray(256);
+                for (let v = 0; v < 256; v++) {
+                    lutR[v] = Math.round(v * rG);
+                    lutG[v] = Math.round(v * gG);
+                    lutB[v] = Math.round(v * bG);
+                }
+
+                for (let i = 0; i < d.length; i += 4) {
+                    if (d[i + 3] < 8) continue;
+                    d[i]     = lutR[d[i]];
+                    d[i + 1] = lutG[d[i + 1]];
+                    d[i + 2] = lutB[d[i + 2]];
+                }
+
+                cx.putImageData(imgData, 0, 0);
+
+                resolve(c);
+            } catch (err) {
+                console.warn('[WB] failed', err);
+                resolve(null);
             }
-            if (!n) { resolve(null); return; }
-
-            const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
-            const gray = (rAvg + gAvg + bAvg) / 3;
-            if (gray < 2 || gray > 253) { resolve(null); return; }
-
-            const MAX_G = 1.75, MIN_G = 0.58;
-            let rG = gray / Math.max(rAvg, 1);
-            let gG = gray / Math.max(gAvg, 1);
-            let bG = gray / Math.max(bAvg, 1);
-            rG = Math.min(Math.max(rG, MIN_G), MAX_G);
-            gG = Math.min(Math.max(gG, MIN_G), MAX_G);
-            bG = Math.min(Math.max(bG, MIN_G), MAX_G);
-
-            const avgG = (rG + gG + bG) / 3;
-            if (avgG > 0.0001) { rG /= avgG; gG /= avgG; bG /= avgG; }
-
-            const lutR = new Uint8ClampedArray(256);
-            const lutG = new Uint8ClampedArray(256);
-            const lutB = new Uint8ClampedArray(256);
-            for (let v = 0; v < 256; v++) {
-                lutR[v] = Math.round(v * rG);
-                lutG[v] = Math.round(v * gG);
-                lutB[v] = Math.round(v * bG);
-            }
-
-            for (let i = 0; i < d.length; i += 4) {
-                if (d[i + 3] < 8) continue;
-                d[i]     = lutR[d[i]];
-                d[i + 1] = lutG[d[i + 1]];
-                d[i + 2] = lutB[d[i + 2]];
-            }
-
-            try { cx.putImageData(imgData, 0, 0); } catch (err) { resolve(null); return; }
-
-            let outUrl;
-            try { outUrl = c.toDataURL('image/png'); } catch (err) { resolve(null); return; }
-
-            const newImg = new Image();
-            newImg.onload = () => resolve(newImg);
-            newImg.onerror = () => resolve(null);
-            newImg.src = outUrl;
         });
     }
 
@@ -3160,16 +3155,19 @@
 
         showShortcutHint('正在计算白平衡…');
         computeWhiteBalanceImage(layer.img).then((newImg) => {
+            hideShortcutHint();
             if (!newImg) {
                 showToast('自动白平衡失败');
-                hideShortcutHint();
                 return;
             }
             if (layers.indexOf(layer) < 0) return;
             layer.img = newImg;
             renderAll(); renderOverlay(); renderLayerPanel(); saveState();
             showToast('已应用自动白平衡');
-        }).catch(() => showToast('自动白平衡失败'));
+        }).catch(() => {
+            hideShortcutHint();
+            showToast('自动白平衡失败');
+        });
     }
 
     // ========== 变换模式 ==========
@@ -3199,7 +3197,6 @@
         transformDragMode = null;
         transformStartState = null;
         canvasStage.style.cursor = '';
-        setHintDimmed(false);
 
         if (apply) {
             saveState(true);
@@ -3334,7 +3331,7 @@
             centerY: groupY + groupH / 2,
             startMouseX: mouseX, startMouseY: mouseY,
             frameRot: getFrameRotation(),
-            snapTargets: buildSnapTargets(new Set(indices)),   // ★ 缓存吸附目标
+            snapTargets: buildSnapTargets(new Set(indices)),
             members, indices
         };
     }
@@ -3481,7 +3478,7 @@
                 origX: layers[idx].x,
                 origY: layers[idx].y
             }));
-            dragSnapTargets = buildSnapTargets(new Set(selectedIndices));   // ★ 缓存吸附目标
+            dragSnapTargets = buildSnapTargets(new Set(selectedIndices));
             isDragging = true;
             dragStartX = m.x;
             dragStartY = m.y;
@@ -3587,10 +3584,6 @@
         }
     });
 
-    /* ============================================================
-       ★ 拖拽处理：mousemove 只记录最新坐标，渲染放到 rAF 里执行，
-          避免高频事件直接触发全量重绘导致卡顿。
-       ============================================================ */
     let pendingMoveEvent = null;
     let pendingMoveRaf = null;
 
@@ -3610,7 +3603,6 @@
             const start = transformStartState;
             if (!start) return;
 
-            // 统一把鼠标坐标换算到「未旋转」的变换坐标系
             const frameRot = start.frameRot || 0;
             if (frameRot) {
                 const cx = start.centerX, cy = start.centerY;
@@ -3970,7 +3962,6 @@
         if (e.button === 1) e.preventDefault();
     });
 
-    // 滚动时画布相对视口位移，需失效坐标缓存
     canvasWrapper.addEventListener('scroll', invalidateCanvasRectCache, { passive: true });
 
     window.addEventListener('mousemove', function(e) {
@@ -4043,40 +4034,42 @@
         setViewScale(viewScale * factor, e.clientX, e.clientY);
     }, { passive: false });
 
+    // ★ 滚轮行为：变换模式下缩放当前图层；非变换模式下缩放整个视图
     canvas.addEventListener('wheel', function(e) {
         if (e.ctrlKey || e.metaKey) return;
-        if (transformMode) { e.preventDefault(); return; }
         e.preventDefault();
 
-        const active = getActiveLayer();
-        if (!active || selectedIndices.size > 1) {
-            const factor = e.deltaY > 0 ? 0.9 : 1.1;
-            setViewScale(viewScale * factor, e.clientX, e.clientY);
+        if (transformMode) {
+            if (selectedIndices.size !== 1) return;
+            const active = getActiveLayer();
+            if (!active || active.locked) return;
+            if (!active.img || !active.img.width) return;
+
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            let newScale = active.scaleX + delta;
+            newScale = Math.min(Math.max(newScale, 0.05), 20);
+            if (newScale === active.scaleX && newScale === active.scaleY) return;
+
+            const oldW = getLayerW(active);
+            const oldH = getLayerH(active);
+            if (oldW <= 0 || oldH <= 0) return;
+
+            const newW = active.img.width * newScale;
+            const newH = active.img.height * newScale;
+            const cx = active.x + oldW / 2;
+            const cy = active.y + oldH / 2;
+            active.x = cx - newW / 2;
+            active.y = cy - newH / 2;
+            active.scaleX = newScale;
+            active.scaleY = newScale;
+            renderAll(); renderOverlay();
+            if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
+            wheelSaveTimer = setTimeout(() => saveState(), 300);
             return;
         }
-        if (active.locked) { showToast('图层已锁定，无法缩放'); return; }
-        if (!active.img || !active.img.width) return;
 
-        const delta = e.deltaY > 0 ? -0.05 : 0.05;
-        let newScale = active.scaleX + delta;
-        newScale = Math.min(Math.max(newScale, 0.05), 20);
-        if (newScale === active.scaleX && newScale === active.scaleY) return;
-
-        const oldW = getLayerW(active);
-        const oldH = getLayerH(active);
-        if (oldW <= 0 || oldH <= 0) return;
-
-        const newW = active.img.width * newScale;
-        const newH = active.img.height * newScale;
-        const cx = active.x + oldW / 2;
-        const cy = active.y + oldH / 2;
-        active.x = cx - newW / 2;
-        active.y = cy - newH / 2;
-        active.scaleX = newScale;
-        active.scaleY = newScale;
-        renderAll(); renderOverlay();
-        if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
-        wheelSaveTimer = setTimeout(() => saveState(), 300);
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        setViewScale(viewScale * factor, e.clientX, e.clientY);
     }, { passive: false });
 
     // ========== 视图缩放快捷 ==========
@@ -4295,7 +4288,13 @@
         huePanel.classList.remove('active');
         hueEditingLayerIndex = -1;
         hueOriginalState = null;
+        if (huePreviewRaf !== null) {
+            cancelAnimationFrame(huePreviewRaf);
+            huePreviewRaf = null;
+        }
     }
+
+    let huePreviewRaf = null;
 
     function updateHuePreview() {
         const idx = hueEditingLayerIndex;
@@ -4311,7 +4310,27 @@
         conValue.textContent = Math.round(layer.contrast) + '%';
         updateHueGradients();
         updatePresetButtons();
-        renderAll(); renderOverlay(); renderLayerPanel();
+        renderAll(); renderOverlay();
+        refreshLayerItemThumb(idx);
+    }
+
+    function scheduleHuePreview() {
+        if (huePreviewRaf !== null) return;
+        huePreviewRaf = requestAnimationFrame(() => {
+            huePreviewRaf = null;
+            updateHuePreview();
+        });
+    }
+
+    function refreshLayerItemThumb(index) {
+        const item = layerList.querySelector('.layer-item[data-index="' + index + '"]');
+        if (!item) return;
+        const layer = layers[index];
+        if (!layer) return;
+        const oldThumb = item.querySelector('.layer-thumb');
+        if (!oldThumb) return;
+        const newThumb = buildThumbCanvas(layer);
+        oldThumb.replaceWith(newThumb);
     }
 
     function updatePresetButtons() {
@@ -4331,10 +4350,10 @@
         });
     }
 
-    hueSlider.addEventListener('input', updateHuePreview);
-    satSlider.addEventListener('input', updateHuePreview);
-    briSlider.addEventListener('input', updateHuePreview);
-    conSlider.addEventListener('input', updateHuePreview);
+    hueSlider.addEventListener('input', scheduleHuePreview);
+    satSlider.addEventListener('input', scheduleHuePreview);
+    briSlider.addEventListener('input', scheduleHuePreview);
+    conSlider.addEventListener('input', scheduleHuePreview);
 
     huePanel.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -4611,11 +4630,13 @@
         { keys: ['Esc'], desc: '取消变换 / 关闭面板' },
         { keys: ['空格', '拖拽'], desc: '平移视图' },
         { keys: ['中键拖拽'], desc: '平移视图' },
-        { keys: ['滚轮'], desc: '缩放当前图层（画布上）' },
-        { keys: ['Ctrl', '滚轮'], desc: '缩放整个视图' },
+        { keys: ['滚轮'], desc: '缩放整个视图' },
+        { keys: ['变换模式', '滚轮'], desc: '缩放当前选中图层' },
+        { keys: ['Ctrl', '滚轮'], desc: '缩放整个视图（备选）' },
         { keys: ['双击图层'], desc: '进入自由变换' },
         { keys: ['变换模式', '角外侧圆点'], desc: '旋转图层' },
         { keys: ['变换模式', 'Shift'], desc: '旋转吸附 15° / 中心缩放' },
+        { keys: ['变换模式', 'Ctrl'], desc: '自由拉伸（不保持等比）' },
         { keys: ['右键图层'], desc: '打开操作菜单' },
         { keys: ['Shift', '点击图层'], desc: '多选 / 取消多选' },
         { keys: ['?'], desc: '显示本帮助' }
