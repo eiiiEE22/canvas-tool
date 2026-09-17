@@ -104,14 +104,6 @@
     }
     .field input[type="number"]:focus{ border-color:var(--accent); }
 
-    /* ★ 画布背景色选择器 */
-    .field input[type="color"]{
-        width:30px; height:26px; padding:2px;
-        border:1px solid var(--border); border-radius:6px;
-        background:var(--input-bg); cursor:pointer;
-    }
-    .field input[type="color"]:hover{ border-color:var(--border-strong); }
-
     .btn{
         display:inline-flex; align-items:center; justify-content:center; gap:7px;
         height:32px; padding:0 12px;
@@ -161,13 +153,13 @@
         color:var(--text-2); font-size:12px; margin-left:4px;
     }
     .zoom-control .zoom-name{ font-size:11px; color:var(--text-3); }
-    #zoomLabel, #opacityLabel{
+    #zoomLabel{
         width:52px; text-align:center;
         background:var(--input-bg); border:1px solid var(--border);
         color:var(--text); border-radius:6px; padding:4px 4px;
         font-size:12px; font-family:inherit; outline:none;
     }
-    #zoomLabel:focus, #opacityLabel:focus{ border-color:var(--accent); }
+    #zoomLabel:focus{ border-color:var(--accent); }
 
     .hint{
         margin-left:auto; color:var(--text-3); font-size:11px;
@@ -199,7 +191,6 @@
         box-shadow:0 1px 3px rgba(0,0,0,.25); cursor:pointer;
     }
     .zoom-control input[type="range"]{ width:96px; }
-    .zoom-control input#opacitySlider{ width:80px; }
 
     .main-area{
         display:flex; gap:14px; flex:1; min-height:0; padding-top:14px;
@@ -513,35 +504,6 @@
         background:var(--accent-hover); border-color:var(--accent-hover);
     }
 
-    /* ★ 对齐 / 分布 弹出面板 */
-    .align-panel{
-        position:fixed; display:none;
-        background:var(--surface); border:1px solid var(--border);
-        border-radius:12px; padding:10px;
-        box-shadow:var(--shadow-panel); z-index:3100;
-        user-select:none;
-    }
-    .align-panel.active{ display:block; }
-    .align-panel .align-row{ display:flex; gap:4px; margin-bottom:6px; }
-    .align-panel .align-row:last-child{ margin-bottom:0; }
-    .align-panel .align-btn{
-        width:34px; height:34px;
-        display:flex; align-items:center; justify-content:center;
-        border:1px solid var(--border); background:var(--surface);
-        border-radius:8px; color:var(--text-2); cursor:pointer;
-    }
-    .align-panel .align-btn:hover{
-        background:var(--hover); color:var(--text);
-        border-color:var(--border-strong);
-    }
-    .align-panel .align-btn svg{
-        width:17px; height:17px; stroke:currentColor; stroke-width:1.7;
-        fill:none; stroke-linecap:round; stroke-linejoin:round;
-    }
-    .align-panel .divider-h{
-        height:1px; background:var(--border); margin:6px 2px;
-    }
-
     .modal-overlay{
         display:none; position:fixed; inset:0;
         background:var(--modal-overlay); backdrop-filter:blur(3px);
@@ -685,17 +647,9 @@
                 <svg viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
                 撤销
             </button>
-            <button id="redoBtn" class="btn" title="重做 (Ctrl+Shift+Z)">
-                <svg viewBox="0 0 24 24"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
-                重做
-            </button>
             <button id="deleteBtn" class="btn danger">
                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 删除图层
-            </button>
-            <button id="alignBtn" class="btn" title="对齐 / 分布">
-                <svg viewBox="0 0 24 24"><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="5" width="13" height="5" rx="1.5"/><rect x="7" y="14" width="8" height="5" rx="1.5"/></svg>
-                对齐
             </button>
         </div>
         <div class="sep"></div>
@@ -712,15 +666,6 @@
             <input type="range" id="zoomSlider" min="10" max="300" value="100" step="1" title="等比缩放当前选中图层" />
             <input type="text" id="zoomLabel" value="100%" title="等比缩放当前选中图层" />
         </div>
-        <div class="zoom-control">
-            <span class="zoom-name">不透明度</span>
-            <input type="range" id="opacitySlider" min="0" max="100" value="100" step="1" title="图层不透明度" />
-            <input type="text" id="opacityLabel" value="100%" title="图层不透明度" />
-        </div>
-        <label class="field" style="margin-right:0; margin-left:8px;" title="画布背景色">
-            <span>背景</span>
-            <input type="color" id="bgColorInput" value="#ffffff" />
-        </label>
         <div class="hint">
             <kbd>Shift</kbd> 图层多选 · <kbd>中键拖动</kbd> 平移视图 · <kbd>右键</kbd> 色相 · <kbd>双击</kbd> 变换
         </div>
@@ -763,47 +708,8 @@
     <div class="divider"></div>
     <div class="menu-item" data-action="reset-hue">重置色相饱和度</div>
     <div class="divider"></div>
-    <div class="menu-item" data-action="flip-h">水平翻转</div>
-    <div class="menu-item" data-action="flip-v">垂直翻转</div>
-    <div class="menu-item" data-action="rotate-cw">顺时针旋转 90°</div>
-    <div class="menu-item" data-action="rotate-ccw">逆时针旋转 90°</div>
-    <div class="divider"></div>
     <div class="menu-item" data-action="lock">锁定图层</div>
     <div class="menu-item" data-action="delete">删除图层</div>
-</div>
-
-<div class="align-panel" id="alignPanel">
-    <div class="align-row">
-        <button class="align-btn" data-align="left" title="左对齐">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="5" width="13" height="5" rx="1.5"/><rect x="7" y="14" width="8" height="5" rx="1.5"/></svg>
-        </button>
-        <button class="align-btn" data-align="center-h" title="水平居中">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><rect x="5" y="5" width="14" height="5" rx="1.5"/><rect x="8" y="14" width="8" height="5" rx="1.5"/></svg>
-        </button>
-        <button class="align-btn" data-align="right" title="右对齐">
-            <svg viewBox="0 0 24 24"><line x1="21" y1="3" x2="21" y2="21"/><rect x="4" y="5" width="13" height="5" rx="1.5"/><rect x="9" y="14" width="8" height="5" rx="1.5"/></svg>
-        </button>
-    </div>
-    <div class="align-row">
-        <button class="align-btn" data-align="top" title="顶部对齐">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="3" x2="21" y2="3"/><rect x="5" y="7" width="5" height="13" rx="1.5"/><rect x="14" y="7" width="5" height="8" rx="1.5"/></svg>
-        </button>
-        <button class="align-btn" data-align="middle" title="垂直居中">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><rect x="5" y="5" width="5" height="14" rx="1.5"/><rect x="14" y="8" width="5" height="8" rx="1.5"/></svg>
-        </button>
-        <button class="align-btn" data-align="bottom" title="底部对齐">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="21" x2="21" y2="21"/><rect x="5" y="4" width="5" height="13" rx="1.5"/><rect x="14" y="9" width="5" height="8" rx="1.5"/></svg>
-        </button>
-    </div>
-    <div class="divider-h"></div>
-    <div class="align-row">
-        <button class="align-btn" data-align="dist-h" title="水平分布（需 3 个以上图层）">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="3" x2="3" y2="21"/><line x1="21" y1="3" x2="21" y2="21"/><rect x="10" y="7" width="4" height="10" rx="1"/></svg>
-        </button>
-        <button class="align-btn" data-align="dist-v" title="垂直分布（需 3 个以上图层）">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="3" x2="21" y2="3"/><line x1="3" y1="21" x2="21" y2="21"/><rect x="7" y="10" width="10" height="4" rx="1"/></svg>
-        </button>
-    </div>
 </div>
 
 <div class="hue-panel" id="huePanel">
@@ -943,14 +849,6 @@
     const briMarker = document.getElementById('briMarker');
     const dropOverlay = document.getElementById('dropOverlay');
 
-    /* ★ 新增元素引用 */
-    const redoBtn = document.getElementById('redoBtn');
-    const opacitySlider = document.getElementById('opacitySlider');
-    const opacityLabel = document.getElementById('opacityLabel');
-    const alignBtn = document.getElementById('alignBtn');
-    const alignPanel = document.getElementById('alignPanel');
-    const bgColorInput = document.getElementById('bgColorInput');
-
     const ICON_EYE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
     const ICON_EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16"/><path d="M9.9 5.9A10.3 10.3 0 0112 5.5c6.4 0 10 6.5 10 6.5a17.6 17.6 0 01-3.5 4.2"/><path d="M6.7 7.2A17.7 17.7 0 002 12s3.6 6.5 10 6.5c1.4 0 2.7-.3 3.9-.9"/></svg>';
     const ICON_LOCK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"/><path d="M8 10.5V7.8a4 4 0 018 0v2.7"/></svg>';
@@ -1015,9 +913,6 @@
     let canvasWidth = 800, canvasHeight = 800;
     let viewScale = 1;
 
-    /* ★ 画布背景色 */
-    let canvasBgColor = '#ffffff';
-
     let isAspectLocked = false;
     let lastValidWidth = 800;
     let lastValidHeight = 800;
@@ -1060,9 +955,8 @@
     // ★ 图层拖拽排序
     let dragSortSrcIndex = -1;
 
-    // ★ 防止程序设置滑块时触发 input/change 事件
+    // ★ 防止程序设置缩放滑块时触发 input/change 事件
     let isSyncingZoomSlider = false;
-    let isSyncingOpacitySlider = false;
 
     // ========== 工具函数 ==========
     let toastTimer = null;
@@ -1164,23 +1058,6 @@
         return step;
     }
 
-    /* ★ 根据画布背景色自动选择网格线颜色 */
-    function hexToRgb(hex) {
-        if (!hex) return null;
-        let h = String(hex).trim().replace('#', '');
-        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-        if (h.length !== 6) return null;
-        const n = parseInt(h, 16);
-        if (isNaN(n)) return null;
-        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-    }
-    function getGridLineColor() {
-        const rgb = hexToRgb(canvasBgColor);
-        if (!rgb) return getCSSVar('--grid-line') || '#f1f1f2';
-        const lum = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
-        return lum > 140 ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.10)';
-    }
-
     function getActiveLayer() {
         if (activeLayerIndex >= 0 && activeLayerIndex < layers.length) {
             return layers[activeLayerIndex];
@@ -1250,7 +1127,6 @@
             img: img, x: x, y: y,
             scaleX: scale, scaleY: scale,
             visible: true, locked: false, opacity: 1,
-            flipX: false, flipY: false,
             hue: 0, saturation: 100, brightness: 100
         };
         layers.push(layer);
@@ -1304,9 +1180,10 @@
         }
     }
 
+    // ★ 关键修复：切换图层时，若处于变换模式，先“应用”变换，而不是“取消”
     function selectLayer(index, additive) {
         if (index < 0 || index >= layers.length) return;
-        if (transformMode) exitTransformMode(true);
+        if (transformMode) exitTransformMode(true); // ← 修复：应用变换，保留缩放
 
         if (additive) {
             if (selectedIndices.has(index)) {
@@ -1352,7 +1229,7 @@
         renderLayerPanel(); saveState();
     }
 
-    // ★ 图层拖拽排序
+    // ★ 图层拖拽排序：把 src 移动到 target 的「视觉上方/下方」
     function moveLayerToPosition(srcIndex, targetIndex, before) {
         const n = layers.length;
         if (srcIndex < 0 || srcIndex >= n) return;
@@ -1363,6 +1240,7 @@
         const movedLayer = oldLayers[srcIndex];
         const targetLayer = oldLayers[targetIndex];
 
+        // 视觉顺序 = 数组倒序；"视觉上方" => 数组索引更大
         const rest = oldLayers.slice();
         rest.splice(srcIndex, 1);
         const targetPos = rest.indexOf(targetLayer);
@@ -1376,6 +1254,7 @@
         }
         if (same) return;
 
+        // 用引用保存关键索引，重新映射
         const oldActive = (activeLayerIndex >= 0 && activeLayerIndex < n) ? oldLayers[activeLayerIndex] : null;
         const oldSelLayers = [];
         selectedIndices.forEach(i => { if (i >= 0 && i < n) oldSelLayers.push(oldLayers[i]); });
@@ -1396,146 +1275,14 @@
         showShortcutHint('图层顺序已调整');
     }
 
-    /* ★ 翻转图层（非破坏性） */
-    function flipLayer(index, horizontal) {
-        const layer = layers[index];
-        if (!layer || !layer.img) return;
-        if (layer.locked) { showToast('图层已锁定，无法翻转'); return; }
-        if (horizontal) layer.flipX = !layer.flipX;
-        else layer.flipY = !layer.flipY;
-        renderAll(); renderOverlay(); renderLayerPanel(); saveState();
-        showToast(horizontal ? '已水平翻转' : '已垂直翻转');
-        showShortcutHint(horizontal ? '已水平翻转' : '已垂直翻转');
-    }
-
-    /* ★ 旋转 90°（基于像素，保持中心不变） */
-    function rotateLayer90(index, clockwise) {
-        const layer = layers[index];
-        if (!layer || !layer.img) return;
-        if (layer.locked) { showToast('图层已锁定，无法旋转'); return; }
-
-        const sw = layer.img.naturalWidth || layer.img.width;
-        const sh = layer.img.naturalHeight || layer.img.height;
-        if (!sw || !sh) return;
-
-        const c = document.createElement('canvas');
-        c.width = sh;
-        c.height = sw;
-        const cx = c.getContext('2d');
-        cx.translate(sh / 2, sw / 2);
-        cx.rotate((clockwise ? 1 : -1) * Math.PI / 2);
-        cx.drawImage(layer.img, -sw / 2, -sh / 2, sw, sh);
-
-        const w0 = getLayerW(layer), h0 = getLayerH(layer);
-        const centerX = layer.x + w0 / 2;
-        const centerY = layer.y + h0 / 2;
-
-        let outUrl;
-        try { outUrl = c.toDataURL('image/png'); } catch (err) { showToast('旋转失败'); return; }
-
-        const newImg = new Image();
-        newImg.onload = () => {
-            if (layers.indexOf(layer) < 0) return;
-            layer.img = newImg;
-            const w1 = getLayerW(layer), h1 = getLayerH(layer);
-            layer.x = centerX - w1 / 2;
-            layer.y = centerY - h1 / 2;
-            renderAll(); renderOverlay(); renderLayerPanel(); saveState();
-            showToast('已旋转 90°');
-            showShortcutHint('已旋转 90°');
-        };
-        newImg.onerror = () => showToast('旋转失败');
-        newImg.src = outUrl;
-    }
-
-    /* ★ 对齐 */
-    function alignLayers(mode) {
-        const indices = getSelectedLayerIndices();
-        if (indices.length === 0) { showToast('请先选择图层'); return; }
-        for (const i of indices) {
-            if (layers[i].locked) { showToast('选中图层中有锁定图层，无法对齐'); return; }
-        }
-
-        let bounds;
-        if (indices.length === 1) {
-            bounds = { x: 0, y: 0, w: canvasWidth, h: canvasHeight };
-        } else {
-            bounds = getSelectionBounds();
-        }
-        if (!bounds) return;
-
-        for (const i of indices) {
-            const l = layers[i];
-            const w = getLayerW(l);
-            const h = getLayerH(l);
-            switch (mode) {
-                case 'left':     l.x = bounds.x; break;
-                case 'center-h': l.x = bounds.x + (bounds.w - w) / 2; break;
-                case 'right':    l.x = bounds.x + bounds.w - w; break;
-                case 'top':      l.y = bounds.y; break;
-                case 'middle':   l.y = bounds.y + (bounds.h - h) / 2; break;
-                case 'bottom':   l.y = bounds.y + bounds.h - h; break;
-            }
-        }
-        renderAll(); renderOverlay(); renderLayerPanel(); saveState();
-        showToast('已对齐');
-        showShortcutHint('已对齐');
-    }
-
-    /* ★ 分布（至少 3 个图层） */
-    function distributeLayers(axis) {
-        const indices = getSelectedLayerIndices();
-        if (indices.length < 3) { showToast('分布需要至少 3 个图层'); return; }
-        for (const i of indices) {
-            if (layers[i].locked) { showToast('选中图层中有锁定图层，无法分布'); return; }
-        }
-
-        const items = indices.map(i => {
-            const l = layers[i];
-            return { l: l, w: getLayerW(l), h: getLayerH(l) };
-        });
-
-        if (axis === 'h') {
-            items.sort((a, b) => a.l.x - b.l.x);
-            const firstX = items[0].l.x;
-            const last = items[items.length - 1];
-            const lastRight = last.l.x + last.w;
-            const span = lastRight - firstX;
-            const totalW = items.reduce((s, it) => s + it.w, 0);
-            const gap = (span - totalW) / (items.length - 1);
-            let cur = firstX;
-            for (const it of items) {
-                it.l.x = cur;
-                cur += it.w + gap;
-            }
-        } else {
-            items.sort((a, b) => a.l.y - b.l.y);
-            const firstY = items[0].l.y;
-            const last = items[items.length - 1];
-            const lastBottom = last.l.y + last.h;
-            const span = lastBottom - firstY;
-            const totalH = items.reduce((s, it) => s + it.h, 0);
-            const gap = (span - totalH) / (items.length - 1);
-            let cur = firstY;
-            for (const it of items) {
-                it.l.y = cur;
-                cur += it.h + gap;
-            }
-        }
-
-        renderAll(); renderOverlay(); renderLayerPanel(); saveState();
-        showToast(axis === 'h' ? '已水平分布' : '已垂直分布');
-        showShortcutHint(axis === 'h' ? '已水平分布' : '已垂直分布');
-    }
-
     // ========== 渲染 ==========
     function renderAll() {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.fillStyle = canvasBgColor;
+        ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
         const step = getGridStep();
-        ctx.strokeStyle = getGridLineColor();
+        ctx.strokeStyle = getCSSVar('--grid-line') || '#f1f1f2';
         ctx.lineWidth = 0.5;
         for (let x = 0; x <= canvasWidth; x += step) {
             ctx.beginPath();
@@ -1553,19 +1300,9 @@
             if (w === 0 || h === 0) continue;
             ctx.globalAlpha = layer.opacity;
             ctx.filter = getLayerFilter(layer);
-            if (layer.flipX || layer.flipY) {
-                ctx.save();
-                try {
-                    ctx.translate(layer.x + w / 2, layer.y + h / 2);
-                    ctx.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
-                    ctx.drawImage(layer.img, -w / 2, -h / 2, w, h);
-                } catch (err) { /* ignore */ }
-                ctx.restore();
-            } else {
-                try {
-                    ctx.drawImage(layer.img, layer.x, layer.y, w, h);
-                } catch (err) { /* ignore */ }
-            }
+            try {
+                ctx.drawImage(layer.img, layer.x, layer.y, w, h);
+            } catch (err) { /* 图片可能损坏，忽略 */ }
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
         }
@@ -1729,53 +1466,6 @@
         ];
     }
 
-    /* ★ 状态栏同步：缩放 & 不透明度 */
-    function syncScaleUI(active, selCount) {
-        isSyncingZoomSlider = true;
-        if (active && selCount <= 1) {
-            const pct = Math.round(active.scaleX * 100);
-            zoomSlider.value = Math.min(Math.max(pct, 10), 300);
-            zoomLabel.value = `${pct}%`;
-        } else if (selCount > 1) {
-            zoomSlider.value = 100;
-            zoomLabel.value = '多选';
-        } else {
-            zoomSlider.value = 100;
-            zoomLabel.value = '100%';
-        }
-        isSyncingZoomSlider = false;
-    }
-
-    /* ★ 重写：支持多选 + 变换模式下可用 */
-    function syncOpacityUI(active, selCount) {
-        isSyncingOpacitySlider = true;
-        const sel = Array.from(selectedIndices).filter(i => i >= 0 && i < layers.length);
-
-        if (sel.length === 0) {
-            opacitySlider.value = 100;
-            opacityLabel.value = '100%';
-        } else if (sel.length === 1) {
-            const l = layers[sel[0]];
-            const pct = Math.round((l.opacity !== undefined ? l.opacity : 1) * 100);
-            opacitySlider.value = Math.min(Math.max(pct, 0), 100);
-            opacityLabel.value = `${pct}%`;
-        } else {
-            const ops = sel.map(i => (layers[i].opacity !== undefined ? layers[i].opacity : 1));
-            const first = ops[0];
-            const allSame = ops.every(o => Math.abs(o - first) < 0.005);
-            if (allSame) {
-                const pct = Math.round(first * 100);
-                opacitySlider.value = Math.min(Math.max(pct, 0), 100);
-                opacityLabel.value = `${pct}%`;
-            } else {
-                const avg = ops.reduce((a, b) => a + b, 0) / ops.length;
-                opacitySlider.value = Math.min(Math.max(Math.round(avg * 100), 0), 100);
-                opacityLabel.value = '多选';
-            }
-        }
-        isSyncingOpacitySlider = false;
-    }
-
     function updateStatus() {
         sizeInfo.textContent = `画布 ${canvasWidth} × ${canvasHeight}`;
         const selCount = selectedIndices.size;
@@ -1784,13 +1474,25 @@
             const w = Math.round(getLayerW(active));
             const h = Math.round(getLayerH(active));
             posInfo.textContent = `图层 ${layers.length} · 选中 ${active.name}（${w}×${h}）${active.locked ? ' · 已锁定' : ''}`;
+            const pct = Math.round(active.scaleX * 100);
+            // ★ 防止程序设置滑块值触发 input/change 事件
+            isSyncingZoomSlider = true;
+            zoomSlider.value = Math.min(Math.max(pct, 10), 300);
+            zoomLabel.value = `${pct}%`;
+            isSyncingZoomSlider = false;
         } else if (selCount > 1) {
             posInfo.textContent = `图层 ${layers.length} · 已选 ${selCount} 个图层`;
+            isSyncingZoomSlider = true;
+            zoomSlider.value = 100;
+            zoomLabel.value = '多选';
+            isSyncingZoomSlider = false;
         } else {
             posInfo.textContent = `图层 ${layers.length} · 未选中`;
+            isSyncingZoomSlider = true;
+            zoomSlider.value = 100;
+            zoomLabel.value = '100%';
+            isSyncingZoomSlider = false;
         }
-        syncScaleUI(active, selCount);
-        syncOpacityUI(active, selCount);
     }
 
     // ========== 吸附 ==========
@@ -1972,15 +1674,7 @@
             const th = layer.img.height * scale;
             try {
                 tctx.filter = getLayerFilter(layer);
-                if (layer.flipX || layer.flipY) {
-                    tctx.save();
-                    tctx.translate(18, 18);
-                    tctx.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
-                    tctx.drawImage(layer.img, -tw / 2, -th / 2, tw, th);
-                    tctx.restore();
-                } else {
-                    tctx.drawImage(layer.img, (36 - tw) / 2, (36 - th) / 2, tw, th);
-                }
+                tctx.drawImage(layer.img, (36 - tw) / 2, (36 - th) / 2, tw, th);
                 tctx.filter = 'none';
             } catch (err) { /* ignore */ }
         }
@@ -2159,7 +1853,6 @@
                 x: l.x, y: l.y,
                 scaleX: l.scaleX, scaleY: l.scaleY,
                 visible: l.visible, locked: l.locked, opacity: l.opacity,
-                flipX: !!l.flipX, flipY: !!l.flipY,
                 hue: l.hue || 0,
                 saturation: l.saturation !== undefined ? l.saturation : 100,
                 brightness: l.brightness !== undefined ? l.brightness : 100
@@ -2174,8 +1867,7 @@
             activeIndex: activeLayerIndex,
             canvasWidth: canvasWidth,
             canvasHeight: canvasHeight,
-            viewScale: viewScale,
-            canvasBgColor: canvasBgColor
+            viewScale: viewScale
         };
         if (historyIndex < history.length - 1) history = history.slice(0, historyIndex + 1);
         if (history.length >= MAX_HISTORY) { history.shift(); historyIndex--; }
@@ -2191,11 +1883,6 @@
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
         viewScale = state.viewScale || 1;
-
-        canvasBgColor = state.canvasBgColor || '#ffffff';
-        bgColorInput.value = canvasBgColor;
-        canvas.style.background = canvasBgColor;
-
         updateCanvasDisplaySize();
         updateViewZoomBadge();
         widthInput.value = canvasWidth;
@@ -2233,7 +1920,6 @@
                         visible: ls.visible,
                         locked: ls.locked !== undefined ? ls.locked : false,
                         opacity: ls.opacity !== undefined ? ls.opacity : 1,
-                        flipX: !!ls.flipX, flipY: !!ls.flipY,
                         hue: ls.hue || 0,
                         saturation: ls.saturation !== undefined ? ls.saturation : 100,
                         brightness: ls.brightness !== undefined ? ls.brightness : 100
@@ -2269,17 +1955,6 @@
             showToast('已撤销');
         } else {
             showToast('没有更多可撤销的操作');
-        }
-    }
-
-    /* ★ 重做 */
-    function redo() {
-        if (historyIndex < history.length - 1) {
-            historyIndex++;
-            restoreState(history[historyIndex]);
-            showToast('已重做');
-        } else {
-            showToast('没有更多可重做的操作');
         }
     }
 
@@ -2342,18 +2017,6 @@
     heightInput.addEventListener('blur', function() {
         let h = parseInt(this.value);
         if (isNaN(h) || h < 100 || h > 4000) this.value = canvasHeight;
-    });
-
-    /* ★ 画布背景色交互 */
-    bgColorInput.addEventListener('input', function() {
-        canvasBgColor = this.value;
-        canvas.style.background = canvasBgColor;
-        renderAll(); renderOverlay();
-    });
-    bgColorInput.addEventListener('change', function() {
-        saveState();
-        showToast('画布背景色已更新');
-        showShortcutHint('画布背景色已更新');
     });
 
     // ========== 图片加载 ==========
@@ -2619,24 +2282,6 @@
         if (saveHist) saveState();
     }
 
-    /* ★ 新增：批量更新选中图层的不透明度（变换模式同样可用） */
-    function updateSelectedOpacity(newOpacity, saveHist) {
-        if (saveHist === undefined) saveHist = true;
-        const indices = Array.from(selectedIndices).filter(i => i >= 0 && i < layers.length);
-        if (indices.length === 0) return;
-        newOpacity = Math.min(Math.max(newOpacity, 0), 1);
-
-        let skippedLocked = false;
-        for (const i of indices) {
-            if (layers[i].locked) { skippedLocked = true; continue; }
-            layers[i].opacity = newOpacity;
-        }
-        if (skippedLocked && saveHist) showToast('已跳过锁定图层');
-
-        renderAll(); renderOverlay(); renderLayerPanel();
-        if (saveHist) saveState();
-    }
-
     function startTransformDrag(mode, handleIndex, bounds, mouseX, mouseY) {
         transformDragMode = mode;
         transformDragIndex = handleIndex;
@@ -2849,7 +2494,7 @@
             }
             renderAll(); renderOverlay(); renderLayerPanel();
             showContextMenu(e.clientX, e.clientY, hitIndex);
-            showShortcutHint('右键菜单：色相 / 白平衡 / 翻转 / 旋转 / 锁定 / 删除');
+            showShortcutHint('右键菜单：调整色相 / 白平衡 / 锁定 / 删除');
         } else {
             hideContextMenu();
         }
@@ -3391,7 +3036,6 @@
         setViewScale(viewScale * factor, e.clientX, e.clientY);
     }, { passive: false });
 
-    /* ★ 修改：滚轮缩放图层时始终以图层中心为缩放中心 */
     canvas.addEventListener('wheel', function(e) {
         if (e.ctrlKey || e.metaKey) return;
         if (transformMode) { e.preventDefault(); return; }
@@ -3407,29 +3051,31 @@
 
         if (active.locked) { showToast('图层已锁定，无法缩放'); return; }
         if (!active.img || !active.img.width) return;
-
+        const m = getCanvasMouse(e);
         const delta = e.deltaY > 0 ? -0.05 : 0.05;
         let newScale = active.scaleX + delta;
         newScale = Math.min(Math.max(newScale, 0.05), 20);
         if (newScale === active.scaleX && newScale === active.scaleY) return;
-
         const oldW = getLayerW(active);
         const oldH = getLayerH(active);
         if (oldW <= 0 || oldH <= 0) return;
-
         const newW = active.img.width * newScale;
         const newH = active.img.height * newScale;
-
-        // ★ 始终以图层中心点缩放，不再跟随鼠标位置
-        const cx = active.x + oldW / 2;
-        const cy = active.y + oldH / 2;
-        active.x = cx - newW / 2;
-        active.y = cy - newH / 2;
-
+        const relX = (m.x - active.x) / oldW;
+        const relY = (m.y - active.y) / oldH;
+        if (relX >= 0 && relX <= 1 && relY >= 0 && relY <= 1) {
+            active.x = m.x - relX * newW;
+            active.y = m.y - relY * newH;
+        } else {
+            const cx = active.x + oldW / 2;
+            const cy = active.y + oldH / 2;
+            active.x = cx - newW / 2;
+            active.y = cy - newH / 2;
+        }
         active.scaleX = newScale;
         active.scaleY = newScale;
         renderAll(); renderOverlay();
-        showShortcutHint('缩放图层中 · 以中心等比缩放');
+        showShortcutHint('缩放图层中 · 滚轮调整比例');
         if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
         wheelSaveTimer = setTimeout(() => saveState(), 300);
     }, { passive: false });
@@ -3458,7 +3104,7 @@
             }
         });
 
-        const menuW = 200, menuH = 430;
+        const menuW = 200, menuH = 280;
         let px = x, py = y;
         if (px + menuW > window.innerWidth) px = window.innerWidth - menuW - 10;
         if (py + menuH > window.innerHeight) py = window.innerHeight - menuH - 10;
@@ -3533,14 +3179,6 @@
             renderAll(); renderOverlay(); renderLayerPanel(); saveState();
             showToast('已重置色相 / 饱和度');
             showShortcutHint('色相饱和度已重置');
-        } else if (action === 'flip-h') {
-            flipLayer(idx, true);
-        } else if (action === 'flip-v') {
-            flipLayer(idx, false);
-        } else if (action === 'rotate-cw') {
-            rotateLayer90(idx, true);
-        } else if (action === 'rotate-ccw') {
-            rotateLayer90(idx, false);
         } else if (action === 'lock') {
             toggleLayerLock(idx);
             showShortcutHint(layer.locked ? '图层已锁定' : '图层已解锁');
@@ -3725,7 +3363,7 @@
         const outCanvas = document.createElement('canvas');
         outCanvas.width = outW; outCanvas.height = outH;
         const outCtx = outCanvas.getContext('2d');
-        outCtx.fillStyle = canvasBgColor;
+        outCtx.fillStyle = '#ffffff';
         outCtx.fillRect(0, 0, outW, outH);
 
         const scaleX = outW / canvasWidth;
@@ -3737,7 +3375,7 @@
         outCtx.save();
         outCtx.translate(offsetX, offsetY);
         outCtx.scale(scale, scale);
-        outCtx.fillStyle = canvasBgColor;
+        outCtx.fillStyle = '#ffffff';
         outCtx.fillRect(0, 0, canvasWidth, canvasHeight);
         for (const layer of layers) {
             if (!layer.visible || !layer.img) continue;
@@ -3746,19 +3384,9 @@
             if (w === 0 || h === 0) continue;
             outCtx.globalAlpha = layer.opacity;
             outCtx.filter = getLayerFilter(layer);
-            if (layer.flipX || layer.flipY) {
-                outCtx.save();
-                try {
-                    outCtx.translate(layer.x + w / 2, layer.y + h / 2);
-                    outCtx.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
-                    outCtx.drawImage(layer.img, -w / 2, -h / 2, w, h);
-                } catch (err) { /* ignore */ }
-                outCtx.restore();
-            } else {
-                try {
-                    outCtx.drawImage(layer.img, layer.x, layer.y, w, h);
-                } catch (err) { /* ignore */ }
-            }
+            try {
+                outCtx.drawImage(layer.img, layer.x, layer.y, w, h);
+            } catch (err) { /* ignore */ }
             outCtx.filter = 'none';
         }
         outCtx.globalAlpha = 1;
@@ -3832,38 +3460,6 @@
     });
     transformBtn.addEventListener('click', toggleTransform);
     undoBtn.addEventListener('click', undo);
-    redoBtn.addEventListener('click', redo);
-
-    /* ★ 对齐面板交互 */
-    alignBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const rect = alignBtn.getBoundingClientRect();
-        const panelW = 132;
-        let left = rect.left;
-        if (left + panelW > window.innerWidth - 8) left = window.innerWidth - panelW - 8;
-        if (left < 8) left = 8;
-        alignPanel.style.left = left + 'px';
-        alignPanel.style.top = (rect.bottom + 6) + 'px';
-        alignPanel.classList.toggle('active');
-    });
-
-    alignPanel.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const btn = e.target.closest('.align-btn');
-        if (!btn) return;
-        const mode = btn.dataset.align;
-        if (mode === 'dist-h') distributeLayers('h');
-        else if (mode === 'dist-v') distributeLayers('v');
-        else alignLayers(mode);
-        alignPanel.classList.remove('active');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!alignPanel.classList.contains('active')) return;
-        if (alignPanel.contains(e.target)) return;
-        if (e.target === alignBtn || alignBtn.contains(e.target)) return;
-        alignPanel.classList.remove('active');
-    });
 
     saveBtn.addEventListener('click', () => {
         outputWidth.value = canvasWidth;
@@ -3917,6 +3513,7 @@
     });
 
     zoomSlider.addEventListener('input', function() {
+        // ★ 防止程序设置滑块时触发
         if (isSyncingZoomSlider) return;
         if (transformMode) return;
         if (selectedIndices.size > 1) return;
@@ -3925,6 +3522,7 @@
         updateActiveScale(parseFloat(this.value) / 100, false);
     });
     zoomSlider.addEventListener('change', function() {
+        // ★ 防止程序设置滑块时触发
         if (isSyncingZoomSlider) return;
         if (!transformMode && selectedIndices.size <= 1) saveState();
     });
@@ -3947,49 +3545,13 @@
     });
     zoomLabel.addEventListener('focus', function() { this.select(); });
 
-    /* ★ 不透明度：支持多选 + 自由变换模式 */
-    opacitySlider.addEventListener('input', function() {
-        if (isSyncingOpacitySlider) return;
-        if (selectedIndices.size === 0) return;
-        updateSelectedOpacity(parseFloat(this.value) / 100, false);
-    });
-    opacitySlider.addEventListener('change', function() {
-        if (isSyncingOpacitySlider) return;
-        if (selectedIndices.size === 0) return;
-        // 变换模式下不单独落历史，退出变换时统一保存 / 回滚
-        if (transformMode) return;
-        saveState();
-    });
-
-    opacityLabel.addEventListener('keydown', function(e) {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-            const raw = this.value.replace('%', '').trim();
-            const val = parseFloat(raw);
-            if (!isNaN(val) && selectedIndices.size > 0) {
-                updateSelectedOpacity(Math.min(Math.max(val / 100, 0), 1), !transformMode);
-            }
-            this.blur();
-        }
-    });
-    opacityLabel.addEventListener('blur', function() {
-        syncOpacityUI(getActiveLayer(), selectedIndices.size);
-    });
-    opacityLabel.addEventListener('focus', function() { this.select(); });
-
     // ========== 键盘 ==========
     document.addEventListener('keydown', function(e) {
         const tag = document.activeElement && document.activeElement.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-        /* ★ 撤销 / 重做 */
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
-            e.preventDefault();
-            if (e.shiftKey) redo(); else undo();
-            return;
-        }
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
-            e.preventDefault(); redo(); return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault(); undo(); return;
         }
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
             e.preventDefault(); pasteFromClipboard(); return;
@@ -4025,7 +3587,6 @@
         }
         if (e.key === 'Escape') {
             if (huePanel.classList.contains('active')) { hueCancelBtn.click(); return; }
-            if (alignPanel.classList.contains('active')) { alignPanel.classList.remove('active'); return; }
             if (transformMode) { e.preventDefault(); exitTransformMode(false); return; }
             hideContextMenu();
         }
@@ -4211,10 +3772,6 @@
         canvas.height = canvasHeight;
         lastValidWidth = canvasWidth;
         lastValidHeight = canvasHeight;
-
-        canvasBgColor = bgColorInput.value || '#ffffff';
-        canvas.style.background = canvasBgColor;
-
         updateCanvasDisplaySize();
         updateViewZoomBadge();
         initTheme();
